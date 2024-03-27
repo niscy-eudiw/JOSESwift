@@ -63,9 +63,9 @@ struct AESGCMEncryption {
 }
 
 extension AESGCMEncryption: ContentEncrypter {
-  func encrypt(headerData: Data, payload: Payload) throws -> ContentEncryptionContext {
-    throw JOSESwiftError.encryptingFailed(description: "AESGCMEncryption failed")
-  }
+    func encrypt(headerData: Data, payload: Payload) throws -> ContentEncryptionContext {
+      try self.encrypt(header: try .init(parameters: [:], headerData: headerData), payload: payload)
+    }
   
     func encrypt(header: JWEHeader, payload: Payload) throws -> ContentEncryptionContext {
         let plaintext = payload.data()
