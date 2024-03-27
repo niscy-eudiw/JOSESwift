@@ -64,7 +64,10 @@ struct AESGCMEncryption {
 
 extension AESGCMEncryption: ContentEncrypter {
     func encrypt(headerData: Data, payload: Payload) throws -> ContentEncryptionContext {
-      try self.encrypt(header: try .init(parameters: [:], headerData: headerData), payload: payload)
+      try self.encrypt(header: try .init(
+        parameters: ["alg":"A256GCM", "use":"enc"],
+        headerData: headerData
+      ), payload: payload)
     }
   
     func encrypt(header: JWEHeader, payload: Payload) throws -> ContentEncryptionContext {
