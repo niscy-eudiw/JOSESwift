@@ -33,22 +33,22 @@ internal enum AESError: Error {
 }
 
 fileprivate extension ContentEncryptionAlgorithm {
-    var ccAlgorithm: CCAlgorithm {
+    var ccAlgorithm: CCAlgorithm? {
         switch self {
         case .A256CBCHS512:
             return CCAlgorithm(kCCAlgorithmAES)
-
         case .A128CBCHS256:
             return CCAlgorithm(kCCAlgorithmAES)
+        case .A256GCM, .A128GCM:
+            return nil
         }
     }
 
     func checkAESKeyLength(for key: Data) -> Bool {
         switch self {
-        case .A256CBCHS512:
+        case .A256CBCHS512, .A256GCM:
             return key.count == kCCKeySizeAES256
-
-        case .A128CBCHS256:
+        case .A128CBCHS256, .A128GCM:
             return key.count == kCCKeySizeAES128
         }
     }
@@ -105,11 +105,14 @@ enum AES {
             guard algorithm.checkAESKeyLength(for: encryptionKey) else {
                 throw AESError.keyLengthNotSatisfied
             }
+            guard let ccAlgorithm = algorithm.ccAlgorithm else {
+                throw AESError.invalidAlgorithm
+            }
 
             let encrypted = ccAESCBCCrypt(
                 operation: CCOperation(kCCEncrypt),
                 data: plaintext, key: encryptionKey,
-                algorithm: algorithm.ccAlgorithm,
+                algorithm: ccAlgorithm,
                 initializationVector: initializationVector,
                 padding: CCOptions(kCCOptionPKCS7Padding)
             )
@@ -122,6 +125,9 @@ enum AES {
             }
 
             return ciphertext
+        case .A256GCM, .A128GCM:
+            /// This is not being used by `AESGCMEncryption` because of `KeyType` type mismatch.
+            throw AESError.invalidAlgorithm
         }
     }
 
@@ -145,11 +151,14 @@ enum AES {
             guard algorithm.checkAESKeyLength(for: decryptionKey) else {
                 throw AESError.keyLengthNotSatisfied
             }
+            guard let ccAlgorithm = algorithm.ccAlgorithm else {
+                throw AESError.invalidAlgorithm
+            }
 
             let decrypted = ccAESCBCCrypt(
                 operation: CCOperation(kCCDecrypt),
                 data: cipherText, key: decryptionKey,
-                algorithm: algorithm.ccAlgorithm,
+                algorithm: ccAlgorithm,
                 initializationVector: initializationVector,
                 padding: CCOptions(kCCOptionPKCS7Padding)
             )
@@ -162,6 +171,9 @@ enum AES {
             }
 
             return plaintext
+        case .A256GCM, .A128GCM:
+            /// This is not being used by `AESGCMEncryption` because of `KeyType` type mismatch.
+            throw AESError.invalidAlgorithm
         }
     }
 
